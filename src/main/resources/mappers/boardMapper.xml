@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.BoardDAO">
+
+	<resultMap id="board" type="spring.mvc.project.vo.BoardVO">
+		<result column="b_id" property="b_id" />
+        <result column="mb_id" property="mb_id" />
+        <result column="b_writer" property="b_writer"/>
+        <result column="b_subject" property="b_subject"/>
+        <result column="b_content" property="b_content"/>
+        <result column="b_ref" property="b_ref"/>
+        <result column="b_ref_step" property="b_ref_step"/>
+        <result column="b_ref_level" property="b_ref_level"/>
+        <result column="b_reg_date" property="b_reg_date"/>
+		<collection property="reply" column="b_id" select="getReplyList"/>
+	</resultMap>
+
+	<select id="getBoardCnt" resultType="Integer">
+		SELECT COUNT(*)
+		  FROM ( SELECT b_ref  
+		           FROM board 
+		<if test="type==1">
+				  WHERE b_content LIKE '%'||#{search}||'%'  
+				     OR b_subject LIKE '%'||#{search}||'%' 
+		</if>
+		<if test="type==2">
+				  WHERE b_writer LIKE '%'||#{search}||'%'
+		</if>
+		 		 GROUP BY b_ref)
+	</select>
+	
+	<select id="getBoardList" resultMap="board">
+		SELECT *
+         FROM(select b.*,ROWNUM rNum
+                 FROM  board b
+				<if test="type==0">
+                	WHERE b_id=b_ref
+             	</if>   
+				<if test="type==1">
+					WHERE b_id in (SELECT b_ref   
+					 			     FROM board  
+				                    WHERE b_content LIKE '%'||#{search}||'%'
+					 				   OR b_subject LIKE '%'||#{search}||'%')
+             	</if>   
+				<if test="type==2">
+					WHERE b_id in (SELECT b_ref  
+					                 FROM board  
+					                WHERE b_writer LIKE '%'||#{search}||'%')
+             	</if>   
+                ORDER BY b_id DESC)
+          <![CDATA[
+         WHERE rNum>=#{start} AND rNum<=#{end}
+         ]]>
+	</select>
+
+	<select id="getReplyList" resultType="spring.mvc.project.vo.BoardVO">
+		select * FROM board 
+         WHERE b_ref = #{b_id} AND b_id !=#{b_id}
+         ORDER BY b_ref_step ASC
+	</select>
+	
+	<select id="checkReply" resultType="Integer">
+		<![CDATA[SELECT COUNT(*) FROM board WHERE b_ref=#{b_ref} AND b_ref_step=#{b_ref_step}+1 AND b_ref_level>#{b_ref_level}]]>
+	</select>
+	
+	<insert id ="insertBoard">
+		INSERT INTO board(b_id,mb_id,b_writer, b_subject, b_content,b_ref,b_ref_step,b_ref_level,b_reg_date) 
+		VALUES(BOARD_SEQ.nextval,#{mb_id},#{b_writer},#{b_subject},#{b_content}, decode(0,#{b_ref},board_seq.currval,#{b_ref}),#{b_ref_step},#{b_ref_level},#{b_reg_date})
+	</insert>
+</mapper>

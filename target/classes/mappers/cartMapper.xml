@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.CartDAO" > 
+	<resultMap id="CartProduct" type="spring.mvc.project.vo.CartVO">
+		<result column="cart_id" property="cart_id" />
+        <result column="p_id" property="p_id" />
+        <result column="mb_id" property="mb_id" />
+        <result column="cart_count" property="cart_count"/>
+		<collection property="product" resultMap="product" />
+	</resultMap>
+	<resultMap id="product" type="spring.mvc.project.vo.ProductsVO">
+		<id column="PNO" property="no" />
+        <result column="p_id" property="p_id" />
+        <result column="mb_id" property="mb_id" />
+        <result column="p_name" property="p_name" />
+        <result column="p_category" property="p_category"/>
+        <result column="p_count" property="p_count" />
+        <result column="p_price" property="p_price"/>
+        <result column="p_saleprice" property="p_saleprice" />
+        <result column="p_score" property="p_score" />
+        <result column="p_image" property="p_image" />
+        <result column="p_image2" property="p_image2" />
+        <result column="p_image3" property="p_image3" />
+        <result column="p_saleCount" property="p_saleCount" />
+        <result column="p_readCount" property="p_readCount" />
+        <result column="p_date" property="p_date" />
+	</resultMap>
+	<insert id="insertCart">
+		INSERT INTO carts(cart_id,p_id,mb_id,cart_count) 
+		VALUES(carts_seq.nextval,#{p_id},#{mb_id},#{cart_count})
+	</insert>
+	
+	<select id= "memberCartList" resultMap="CartProduct">
+		SELECT p.* , c.cart_count, c.cart_id  
+	      FROM carts c  
+		  JOIN products p   
+		    ON c.p_id=p.p_id  
+		 WHERE c.mb_id=#{mb_id}
+	</select>
+	
+	<delete id="OderDeleteCart" >
+		DELETE carts
+		WHERE cart_id in
+		<foreach  item="i" collection="list"  open="("  separator="," close=")">
+			#{i}
+		</foreach>
+	</delete>
+<!-- 	<update id="productOrderUpdate">
+		 UPDATE products 
+         SET p_count=p_count-#{order_count} ,p_saleCount =p_saleCount+#{order_count}  
+	     WHERE p_id = #{p_id}
+	</update> -->
+</mapper>

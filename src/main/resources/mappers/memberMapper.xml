@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.MembersDAO">
+	<insert id="insertClient" parameterType="spring.mvc.project.vo.MembersVO">
+		INSERT INTO members(mb_id ,mb_pwd ,mb_name, mb_certifiNum, mb_phone, mb_email, mb_address, mb_join_date,mb_authority,mb_key)
+		VALUES(#{mb_id},#{mb_pwd},#{mb_name},#{mb_certifiNum},#{mb_phone},#{mb_email},#{mb_address},#{mb_join_date},#{mb_authority},#{mb_key})
+	</insert>
+	
+	<update id="updateMember" parameterType="spring.mvc.project.vo.MembersVO">
+		UPDATE members SET mb_pwd=#{mb_pwd}, mb_phone=#{mb_phone} ,mb_address=#{mb_address} WHERE mb_id=#{mb_id}
+	</update>
+</mapper>

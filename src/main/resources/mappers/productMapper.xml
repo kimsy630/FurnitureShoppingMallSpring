@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.ProductDAO">
+	<select id="newProduct" resultType="spring.mvc.project.vo.ProductsVO" >
+	<![CDATA[
+		SELECT *   
+		 FROM (SELECT ROWNUM rnum , p.* 
+		         FROM (select *  
+		                 FROM products  
+					    ORDER BY p_id DESC) p)  
+		 WHERE rnum<=8
+	 ]]>
+	</select>
+	
+	<select id="productSellerList" resultType="spring.mvc.project.vo.ProductsVO" >
+		SELECT *   
+		  FROM products  
+		 WHERE mb_id= #{mb_id}  
+		 ORDER BY CASE #{type} WHEN '1' then p_id    
+						       WHEN '2' then p_saleCount 
+							   WHEN '3' then p_readCount  END DESC
+	</select>
+	<select id="productAdminList" resultType="spring.mvc.project.vo.ProductsVO" >
+		SELECT *   
+		  FROM products 
+		 ORDER BY CASE #{type} WHEN 1 then p_id    
+						       WHEN 2 then p_saleCount 
+							   WHEN 3 then p_readCount  END DESC
+	</select>
+	
+	<insert id="insertProduct">
+		INSERT INTO products(p_id , mb_id ,p_name,p_category , p_count,p_price,p_saleprice,p_image,p_image2,p_image3,p_date)
+		VALUES (products_seq.nextval,#{mb_id},#{p_name},#{p_category},#{p_count},#{p_price},#{p_saleprice}, #{p_image},#{p_image2},#{p_image3},#{p_date})  
+	</insert>
+	<update id="updateProduct">
+		UPDATE products 
+		SET p_name=#{p_name} , p_category=#{p_category} , p_count=#{p_count},p_price=#{p_price},p_saleprice=#{p_saleprice},p_image=#{p_image},p_image2=#{p_image2},p_image3=#{p_image3} 
+		WHERE p_id = #{mb_id}
+	</update>
+	
+	<select id="productCount" resultType="Integer" >
+		SELECT  COUNT(*)
+		  FROM products  
+		<if test="category==null">
+			 WHERE p_name LIKE  '%'||#{search}||'%'
+		</if>
+		<if test="category!=null">
+			 WHERE p_category in( SELECT category_id 
+	                                FROM categorys  
+						           START WITH category_id = #{category}
+						         CONNECT BY PRIOR category_id = category_parents)
+		</if>
+	</select>
+	
+	<select id="categoryChildCheck" resultType="java.util.Map" >
+		select *
+		  from (SELECT CONNECT_BY_ISLEAF LEAF, category_parents ,ROWNUM RNUM 
+		          FROM categorys 
+		         START WITH category_id = #{category}
+		       CONNECT BY PRIOR category_id = category_parents)
+		WHERE rnum = 1
+	</select>
+	<select id="categoryListCount"  resultType="spring.mvc.project.vo.CategorysVo" >
+		SELECT c.category_id, COUNT(p.p_category) as cnt   
+		  FROM products p 
+		  RIGHT JOIN ( SELECT category_id   
+		                 FROM categorys 
+		                WHERE category_parents= #{category} ) c 
+		     ON p.p_category =c.category_id   
+		  GROUP BY c.category_id 
+	</select>
+	<select id="productList" resultType="spring.mvc.project.vo.ProductsVO" >
+		SELECT *  
+		 FROM (SELECT  ROWNUM rnum ,p.*
+			     FROM (SELECT   * 
+				         FROM (SELECT *  
+					             FROM products
+					       	<if test="search!=null">
+					             WHERE p_name LIKE '%'||#{search}||'%' )
+					        </if>
+					             
+					        <if test="category!=null">
+					             WHERE p_category in(SELECT category_id  
+						             				   FROM categorys   
+						 			 			      START WITH category_id = #{category}   
+						 			 				CONNECT BY PRIOR category_id = category_parents)) 
+					        </if>
+					        ORDER BY
+				        	<if test="type==1">
+				     		  CASE WHEN p_count=0  then p_id END DESC,
+		                      CASE WHEN p_count!=0 then p_id END DESC
+				        	</if>
+				        	<if test="type==2">
+		                      CASE WHEN p_count=0  then p_saleCount END DESC,
+		                      CASE WHEN p_count!=0 then p_saleCount END DESC 	
+				        	</if>
+				        	<if test="type==3">
+		                      CASE WHEN p_count=0  then p_readCount END DESC, 
+		                      CASE WHEN p_count!=0 then p_readCount END DESC
+				        	</if>
+				        	<if test="type==4">
+		                      CASE WHEN p_count=0  then p_price END DESC, 
+		                      CASE WHEN p_count!=0 then p_price END DESC
+				        	</if>
+				        	<if test="type==5">
+		                      CASE WHEN p_count!=0 then p_price END ASC, 
+		                      CASE WHEN p_count=0  then p_price END ASC 
+				        	</if>
+				        	<if test="type==6">
+		                      CASE WHEN p_count=0  then p_name END ASC,  
+		                      CASE WHEN p_count!=0 then p_name END ASC 
+				        	</if>
+				        	) p)
+			<![CDATA[
+			WHERE rnum>=#{start} AND rnum<=#{end}  
+			 ]]>
+	</select>
+	
+	<select id="productStockCheck" resultType="Integer">
+		SELECT COUNT(*) 
+		  FROM products  
+		 WHERE
+  		<foreach item="i" collection="list" separator=" OR " >
+		 	<![CDATA[(p_id=#{i.p_id} AND 0<=p_count-#{i.order_count}) ]]>
+		 </foreach>
+	</select>
+	
+	<update id="productOrderUpdate">
+		UPDATE products  
+		   SET p_count=p_count-#{order_count} ,p_saleCount =p_saleCount+#{order_count}
+		 WHERE p_id = #{p_id}
+	</update>
+	
+	<delete id="deleteProducte" >
+		DELETE products WHERE p_id = #{p_id}
+	</delete>
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.OrderDAO">
+	
+	<resultMap id="order" type="spring.mvc.project.vo.OrderVO">
+		<result column="order_id" property="order_id" />
+        <result column="p_id" property="p_id" />
+        <result column="mb_id" property="mb_id" />
+        <result column="order_count" property="order_count"/>
+        <result column="order_price" property="order_price"/>
+        <result column="order_point" property="order_point"/>
+        <result column="order_name" property="order_name"/>
+        <result column="order_ph" property="order_ph"/>
+        <result column="order_address" property="order_address"/>
+        <result column="order_date" property="order_date"/>
+        <result column="order_state" property="order_state"/>
+		<collection property="product" resultMap="product" />
+	</resultMap>
+	<resultMap id="product" type="spring.mvc.project.vo.ProductsVO"><id column="PNO" property="no" />
+        <result column="p_id" property="p_id" />
+        <result column="mb_id" property="mb_id" />
+        <result column="p_name" property="p_name" />
+        <result column="p_category" property="p_category"/>
+        <result column="p_count" property="p_count" />
+        <result column="p_price" property="p_price"/>
+        <result column="p_saleprice" property="p_saleprice" />
+        <result column="p_score" property="p_score" />
+        <result column="p_image" property="p_image" />
+        <result column="p_image2" property="p_image2" />
+        <result column="p_image3" property="p_image3" />
+        <result column="p_saleCount" property="p_saleCount" />
+        <result column="p_readCount" property="p_readCount" />
+        <result column="p_date" property="p_date" />
+	</resultMap>
+
+	<insert id="insertOrder">
+		INSERT INTO orders(order_id, p_id,mb_id,order_count,order_price,order_point,  order_name ,order_ph,order_address ,order_date, order_state)  
+		VALUES(orders_seq.nextval,#{p_id},#{mb_id},#{order_count},#{order_price},#{order_point},#{order_name},#{order_ph},#{order_address},#{order_date},#{order_state})
+	</insert> 
+	<select id="orderView" resultMap="order" >
+		SELECT o.*,p.p_image, p.p_name 
+		  FROM  orders o,products p  
+		 WHERE  p.p_id = o.p_id 
+		 <if test="type==1">
+		 <![CDATA[
+			 AND o.mb_id = #{mb_id} 
+			 AND o.order_state<=5   
+			 ORDER BY o.order_id DESC
+		  ]]>
+		 </if>
+		 <if test="type==2">
+		 <![CDATA[
+			 AND o.mb_id = #{mb_id} 
+			 AND o.order_state>5   
+			 ORDER BY o.order_id DESC
+		  ]]>
+		 </if>
+		 <if test="type==3">
+		 <![CDATA[
+			 AND o.mb_id = #{mb_id} 
+			 AND o.order_state<=5   
+			 ORDER BY o.order_state,o.order_id
+		  ]]>
+		 </if>
+		 <if test="type==4">
+		 <![CDATA[
+			 AND o.mb_id = #{mb_id} 
+			 AND o.order_state>5   
+			 ORDER BY o.order_state,o.order_id
+		  ]]>
+		 </if>
+	</select> 
+	
+	
+</mapper>

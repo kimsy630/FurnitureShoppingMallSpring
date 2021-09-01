@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.CategoryDAO">
+
+	<select id="categoryView" resultType="spring.mvc.project.vo.CategorysVo" >
+		SELECT LEVEL, category_id, category_parents 
+		  FROM categorys 
+		 START WITH category_parents is null
+		CONNECT BY PRIOR category_id=category_parents
+	</select>
+	
+	<select id="categoryCount" resultType="spring.mvc.project.vo.CategorysVo" >
+		SELECT p_category,COUNT(*) as count
+	 	FROM products 
+		WHERE p_category in( SELECT category_id 
+		                        FROM categorys 
+		                        START WITH category_id = #{search} 
+		                        CONNECT BY PRIOR category_id = category_parents) 
+		 GROUP BY p_category";
+	</select>
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace = "spring.mvc.project.persistence.AccountDAO">
+	<select id="accountMonth" resultType="spring.mvc.project.vo.AccountVO" >
+	<![CDATA[
+			SELECT NVL(TO_CHAR(b.dt, 'YYYY-MM'),' ') AS hiredate  
+			     , NVL (TRUNC(SUM(a.sumorder)*0.92), 0) sumorder  
+			      FROM ( SELECT TO_CHAR(o.order_date, 'YYYY-MM-DD')  AS hiredate  , 
+			                SUM(o.order_price) sumorder   
+			               FROM orders o 
+			               JOIN products p  
+			                 ON o.p_id = p.p_id  
+			              WHERE p.mb_id= #{mb_id} 
+			                AND o.order_state IN (2,3) 
+			                AND o.order_date BETWEEN SYSDATE -365  
+			                AND SYSDATE  
+			              GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD'))  a 
+			 RIGHT JOIN (SELECT  TRUNC(add_months(sysdate,-11),'mm') -1+ LEVEL AS dt  
+			               FROM dual    
+			            CONNECT BY LEVEL <= sysdate - TRUNC(add_months(sysdate,-11),'mm') +1)   b  
+			   ON b.dt = a.hiredate  
+			   GROUP BY ROLLUP(TO_CHAR(b.dt, 'YYYY-MM')) 
+			   ORDER BY TO_CHAR(b.dt, 'YYYY-MM') 
+	 ]]>
+	</select>
+	<select id="approvedCount" resultType="Integer" >
+	<![CDATA[
+			SELECT a.order_state,NVL(a.cnt,0) cnt 
+		      FROM (SELECT o.order_state,
+		                   COUNT(o.order_state) cnt   
+					  FROM orders o 
+					  JOIN products p      
+			            ON o.p_id = p.p_id  
+			         WHERE p.mb_id = #{mb_id}  
+					   AND (o.order_state =0 
+					    OR  o.order_state =6)     
+			         GROUP BY o.order_state) a, 
+			       (select LEVEL-1 lv  
+			          FROM dual  
+			         where (level-1)=6 OR (level-1)=0   
+			       connect by level <= 7) b    
+			 WHERE b.lv = a.order_state(+)
+	 ]]>
+	</select>
+	
+	<select id="adminAccountMonth" resultType="spring.mvc.project.vo.AccountVO" >
+	<![CDATA[
+			SELECT NVL (TO_CHAR(b.dt, 'YYYY-MM'),' ') AS hiredate  
+			     , NVL(TRUNC(SUM(a.sumorder)*0.08), 0) sumorder 
+			  FROM ( SELECT TO_CHAR(order_date, 'YYYY-MM-DD') AS hiredate , 
+			  				SUM(order_price) sumorder  
+					   FROM orders  
+					  WHERE order_state IN (2,3) 
+					    AND order_date BETWEEN SYSDATE -365  AND SYSDATE  
+					  GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD'))  a  
+			  RIGHT JOIN ( SELECT  TRUNC(add_months(sysdate,-11),'mm') -1+ LEVEL AS dt  
+					         FROM dual  
+						  CONNECT BY LEVEL <= sysdate - TRUNC(add_months(sysdate,-11),'mm') +1) b  
+				 ON b.dt = a.hiredate  
+			  GROUP BY ROLLUP(TO_CHAR(b.dt, 'YYYY-MM'))  
+			  ORDER BY TO_CHAR(b.dt, 'YYYY-MM')
+	 ]]>
+	</select>
+	
+	<select id="getTest" resultType="spring.mvc.project.vo.AccountVO">
+		select TO_CHAR(order_date, 'YYYY-MM') hiredate,SUM(order_price) sumorder
+		from orders
+		GROUP BY TO_CHAR(order_date, 'YYYY-MM')
+		ORDER BY hiredate
+	</select>
+</mapper>
